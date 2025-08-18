@@ -1,0 +1,10 @@
+pyproject.toml
+lm_docparse/__init__.py
+lm_docparse/chunker.py
+lm_docparse/pdfParser.py
+lm_docparse/tables.py
+lm_docparse.egg-info/PKG-INFO
+lm_docparse.egg-info/SOURCES.txt
+lm_docparse.egg-info/dependency_links.txt
+lm_docparse.egg-info/requires.txt
+lm_docparse.egg-info/top_level.txt

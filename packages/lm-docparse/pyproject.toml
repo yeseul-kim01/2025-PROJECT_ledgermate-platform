@@ -1,0 +1,13 @@
+[project]
+name = "lm-docparse"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["lm-core-schema>=0.1.0", "requests>=2.31", "tenacity>=8.2"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# 이 설정이면 lm_docparse 폴더를 자동으로 패키지로 잡습니다
+packages = { find = { where = ["."] } }

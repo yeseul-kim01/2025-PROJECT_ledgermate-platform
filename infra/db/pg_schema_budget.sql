@@ -1,0 +1,59 @@
+-- 파일/원본 보관(공통)
+CREATE TABLE IF NOT EXISTS artifact (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id        TEXT      NOT NULL,
+  kind          TEXT      NOT NULL,     -- 'raw_pdf' | 'parse_json' | 'template' | ...
+  filename      TEXT      NOT NULL,
+  mime          TEXT,
+  size_bytes    BIGINT,
+  sha256        TEXT      NOT NULL,
+  storage_path  TEXT      NOT NULL,     -- 저장소 내 상대경로
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (org_id, sha256, kind)
+);
+CREATE INDEX IF NOT EXISTS idx_artifact_org ON artifact(org_id);
+
+-- 예산안 메타
+CREATE TABLE IF NOT EXISTS budget_doc (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id       TEXT      NOT NULL,
+  title        TEXT,
+  period_from  DATE,
+  period_to    DATE,
+  policy_id    UUID REFERENCES policy(id),   -- (선택) 해당 규정 버전과 연결
+  source_pdf   UUID REFERENCES artifact(id),
+  parsed_json  UUID REFERENCES artifact(id), -- 파싱 결과 JSON artifact
+  created_by   TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_budget_org ON budget_doc(org_id);
+
+-- 예산/결산 상세 라인(나중에 파싱해서 구조화할 때 사용)
+CREATE TABLE IF NOT EXISTS budget_line (
+  id         BIGSERIAL PRIMARY KEY,
+  budget_id  UUID NOT NULL REFERENCES budget_doc(id) ON DELETE CASCADE,
+  line_no    INT,
+  code       TEXT,                -- 100/510/611 등 분류코드
+  category   TEXT,                -- 사업분야
+  subcat     TEXT,                -- 세부 사업분야
+  item       TEXT,                -- 비목/세부내역
+  amount     NUMERIC(18,2),
+  currency   TEXT DEFAULT 'KRW',
+  notes      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_budget_line_budget ON budget_line(budget_id);
+CREATE INDEX IF NOT EXISTS idx_budget_line_code   ON budget_line(code);
+
+-- 결산안/예산안 양식(템플릿) 저장
+CREATE TABLE IF NOT EXISTS form_template (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  org_id        TEXT NOT NULL,
+  kind          TEXT NOT NULL,         -- 'budget' | 'settlement'
+  name          TEXT NOT NULL,
+  version       TEXT NOT NULL,
+  schema_json   JSONB NOT NULL,        -- 열/필드 정의(JSON Schema 비슷하게)
+  sample_artifact UUID REFERENCES artifact(id),  -- 샘플 PDF/이미지(선택)
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (org_id, kind, name, version)
+);
+CREATE INDEX IF NOT EXISTS idx_form_tpl_org ON form_template(org_id);

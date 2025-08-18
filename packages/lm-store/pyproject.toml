@@ -1,0 +1,18 @@
+[project]
+name = "lm-store"
+version = "0.1.0"
+description = "Storage adapters for LedgerMate (PostgreSQL/Mongo/etc.)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "lm-core-schema>=0.1.0",
+  "SQLAlchemy>=2.0",
+  "psycopg[binary]>=3.1"
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = { find = { where = ["."] } }

@@ -1,0 +1,15 @@
+[project]
+name = "lm-core-schema"               # import는 lm_core_schema
+version = "0.1.0"
+description = "LedgerMate core dataclasses & validation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.6"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# src/ 레이아웃이 아니라 현재 폴더 기준으로 패키지 찾기
+packages = { find = { where = ["."] } }

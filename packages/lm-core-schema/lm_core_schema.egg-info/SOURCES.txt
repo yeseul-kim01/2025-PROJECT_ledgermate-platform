@@ -1,0 +1,6 @@
+pyproject.toml
+lm_core_schema.egg-info/PKG-INFO
+lm_core_schema.egg-info/SOURCES.txt
+lm_core_schema.egg-info/dependency_links.txt
+lm_core_schema.egg-info/requires.txt
+lm_core_schema.egg-info/top_level.txt

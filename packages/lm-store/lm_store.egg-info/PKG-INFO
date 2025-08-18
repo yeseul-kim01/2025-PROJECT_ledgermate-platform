@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: lm-store
+Version: 0.1.0
+Summary: Storage adapters for LedgerMate (PostgreSQL/Mongo/etc.)
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: lm-core-schema>=0.1.0
+Requires-Dist: SQLAlchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.1
