@@ -2,7 +2,9 @@
 from __future__ import annotations
 from typing import Any, Dict, List
 import re, json, html, string
+from typing import Any
 
+MULTIPLY_SIGNS = r"[xX×＊*]"
 # ── helpers ─────────────────────────────────────────────────────────────
 
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -51,17 +53,46 @@ def coerce_text(value: Any) -> str:
         return "\n".join(coerce_text(x) for x in value)
     return str(value)
 
+
 def normalize_text(text_like: Any) -> str:
     s = coerce_text(text_like)
     if ("<" in s and ">" in s):            # HTML 추정
         s = strip_html(s)
     s = html.unescape(s)
-    s = s.replace("\r\n", "\n")
-    s = hyphen_fix(s)
+
+    # 1) 공백/개행 기초 정리
+    s = s.replace("\u00A0", " ")           # NBSP → space
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    s = hyphen_fix(s)                      # 단어 하이픈 줄바꿈 복원 (이미 있던 함수)
     s = re.sub(r"[ \t]+", " ", s)
     s = re.sub(r"[ \t]+\n", "\n", s)
-    s = re.sub(r"\n{3,}", "\n\n", s)
-    return s.strip()
+    s = re.sub(r"\n{3,}", "\n\n", s)       # 3줄 이상 → 2줄
+
+    # 2) 괄호/단위가 개행으로 깨진 케이스 복원
+    #   예: "예산액(\n원)" → "예산액(원)"
+    s = re.sub(r"\(\s*\n\s*", "(", s)
+    s = re.sub(r"\s*\n\s*\)", ")", s)
+
+    #   예: "1,200,000\n원" / "70\n개" / "2\n회" / "10\n%" → 한 줄로
+    s = re.sub(r"([0-9][0-9,]*)\s*\n\s*(원|엔|円)", r"\1\2", s)
+    s = re.sub(r"([0-9][0-9,]*)\s*\n\s*(개|회|건|명|일|%)", r"\1\2", s)
+
+    #   곱하기 표현이 줄바꿈으로 끊긴 경우: "5,000원 X \n 70개 X \n 2회"
+    s = re.sub(rf"\s*\n\s*({MULTIPLY_SIGNS})\s*\n\s*", r" \1 ", s)  # 사이에 낀 개행 제거
+    s = re.sub(rf"\s*\n\s*({MULTIPLY_SIGNS})\s*", r" \1 ", s)       # 앞뒤 공백 정리
+
+    # 3) 곱하기 기호 통일(검색/파싱 안정화)
+    s = re.sub(rf"\s*{MULTIPLY_SIGNS}\s*", " x ", s)
+
+    # 4) 문장 중간의 애매한 1줄 개행 → 공백으로 합치기
+    #   - 끝 문자가 문장부호가 아니고(.,!?…): 다음 줄이 이어지는 텍스트로 보아 붙임
+    #   - 단, 빈 줄(단락 구분)은 유지
+    s = re.sub(r"(?<![\.!\?:;\]\)\}…])\n(?!\n)", " ", s)
+
+    # 5) 다시 여분 공백 최소화
+    s = re.sub(r"[ \t]+", " ", s).strip()
+    return s
+
 
 PUNCT_WS = set(string.punctuation) | {" ", "\n", "\t", "\r"}
 def is_noise_chunk(title, text) -> bool:

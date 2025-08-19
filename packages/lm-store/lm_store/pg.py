@@ -6,6 +6,9 @@ import psycopg
 from psycopg.rows import dict_row
 import json
 from typing import Iterable, Mapping, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 SCHEMA_SQL_PATH = pathlib.Path(__file__).with_name("pg_schema.sql")

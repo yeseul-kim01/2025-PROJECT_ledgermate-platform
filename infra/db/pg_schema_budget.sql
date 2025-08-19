@@ -59,28 +59,26 @@ CREATE TABLE IF NOT EXISTS form_template (
 CREATE INDEX IF NOT EXISTS idx_form_tpl_org ON form_template(org_id);
 
 -- 예산문서 청크
+-- 예산문서 청크 (UUID 정렬)
 CREATE TABLE IF NOT EXISTS budget_chunk (
   id            BIGSERIAL PRIMARY KEY,
-  budget_doc_id BIGINT NOT NULL REFERENCES budget_doc(id) ON DELETE CASCADE,
-  policy_id     UUID,                              -- policy와 연결되면 채우기 (옵션)
-  org_id        TEXT  NOT NULL,                    -- 조인/필터 편의
-  ord           INT   NOT NULL,                    -- 원문 순서 (order → ord 매핑)
-  code          TEXT,                              -- 조항/섹션 코드(있으면)
-  title         TEXT,                              -- 섹션/항목 제목
-  path          TEXT,                              -- 섹션 경로( > 로 join된 문자열 등)
-  text          TEXT NOT NULL,                     -- 검색 대상
-  context_text  TEXT,                              -- 앞뒤 문맥(선택)
-  tables_json   JSONB,                             -- 표 원본(옵션)
-  meta          JSONB DEFAULT '{}'::jsonb,         -- 페이지/좌표 등 추가 메타
+  budget_doc_id UUID  NOT NULL REFERENCES budget_doc(id) ON DELETE CASCADE,
+  policy_id     UUID,
+  org_id        TEXT  NOT NULL,
+  ord           INT   NOT NULL,
+  code          TEXT,
+  title         TEXT,
+  path          TEXT,
+  text          TEXT  NOT NULL,
+  context_text  TEXT,
+  tables_json   JSONB,
+  meta          JSONB DEFAULT '{}'::jsonb,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 조회 성능용 인덱스
-CREATE INDEX IF NOT EXISTS idx_budget_chunk_doc_ord
-  ON budget_chunk (budget_doc_id, ord);
+CREATE INDEX IF NOT EXISTS idx_budget_chunk_doc_ord ON budget_chunk (budget_doc_id, ord);
+CREATE INDEX IF NOT EXISTS idx_budget_chunk_org     ON budget_chunk (org_id);
 
-CREATE INDEX IF NOT EXISTS idx_budget_chunk_org
-  ON budget_chunk (org_id);
 
 -- (선택) 본문 검색용
 -- CREATE INDEX IF NOT EXISTS idx_budget_chunk_fts
