@@ -4,6 +4,8 @@ import hashlib, json, os, pathlib
 from typing import Iterable, Dict, Any, Optional
 import psycopg
 from psycopg.rows import dict_row
+import json
+from typing import Iterable, Mapping, Optional
 
 
 SCHEMA_SQL_PATH = pathlib.Path(__file__).with_name("pg_schema.sql")
@@ -134,5 +136,56 @@ def bulk_insert_chunks(conn: psycopg.Connection, policy_id: str, org_id: str,
     """
     with conn.cursor() as cur:
         cur.executemany(sql, rows)
+    conn.commit()
+    return len(rows)
+
+
+def insert_budget_chunks(
+    conn,
+    *,
+    budget_doc_id: int,
+    org_id: str,
+    policy_id: Optional[str],
+    chunks: Iterable[Mapping]
+) -> int:
+    """
+    chunks 예시 키:
+      order, title, text, path, code, context_text, tables_json, page, section_path, bbox ...
+    """
+    rows = []
+    for i, c in enumerate(chunks):
+        text = (c.get("text") or "").strip()
+        if not text:
+            continue
+        rows.append((
+            budget_doc_id,
+            policy_id,
+            org_id,
+            int(c.get("order") or i),
+            c.get("code"),
+            c.get("title"),
+            c.get("path"),
+            text,
+            c.get("context_text"),
+            json.dumps(c.get("tables_json")) if c.get("tables_json") is not None else None,
+            json.dumps({k: v for k, v in c.items()
+                        if k not in ("order","code","title","path","text","context_text","tables_json")})
+        ))
+
+    if not rows:
+        return 0
+
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO budget_chunk (
+              budget_doc_id, policy_id, org_id, ord, code, title, path, text,
+              context_text, tables_json, meta
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s::jsonb, %s::jsonb)
+            """,
+            rows
+        )
     conn.commit()
     return len(rows)
