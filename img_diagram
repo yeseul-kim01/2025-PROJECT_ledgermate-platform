@@ -1,0 +1,49 @@
+// LedgerMate Architecture
+digraph {
+	rankdir=LR size="8,5"
+	User [label="사용자
+(회계 담당자 등)" fillcolor=lightblue shape=box style=filled]
+	Budget [label="예산안 업로드
+(HWPX/DOCX)" fillcolor=lightyellow shape=folder style=filled]
+	Policy [label="규정 업로드
+(PDF/HWP)" fillcolor=lightyellow shape=folder style=filled]
+	Receipt [label="영수증 업로드
+(Image/PDF)" fillcolor=lightyellow shape=folder style=filled]
+	UDP [label="Upstage Document Parser
+(조항/목차/테이블)" fillcolor=white shape=component]
+	OCR [label="Upstage OCR API
+(한글 영수증 인식)" fillcolor=white shape=component]
+	Match [label="매칭 앙상블
+(Rule + RAG-lite + LLM)" fillcolor=white shape=box3d]
+	Validation [label="규정 검증/초과 여부" fillcolor=white shape=box3d]
+	PG [label="PostgreSQL + pgvector
+(규정 임베딩)" fillcolor=lightgrey shape=cylinder style=filled]
+	S3 [label="AWS S3
+(원본 파일 저장)" fillcolor=lightgrey shape=cylinder style=filled]
+	Mongo [label="MongoDB
+(OCR 원문/좌표)" fillcolor=lightgrey shape=cylinder style=filled]
+	Snow [label="Snowflake
+(로그/분석/ML)" fillcolor=lightgrey shape=cylinder style=filled]
+	Report [label="결산안 리포트
+(HWPX/DOCX)" fillcolor=lightgreen shape=note style=filled]
+	Dashboard [label="대시보드
+(정확도/지출분석)" fillcolor=lightgreen shape=note style=filled]
+	User -> Budget
+	User -> Policy
+	User -> Receipt
+	Budget -> UDP
+	Policy -> UDP
+	Receipt -> OCR
+	UDP -> PG
+	UDP -> S3
+	OCR -> Mongo
+	OCR -> Snow
+	OCR -> Match
+	PG -> Match
+	Snow -> Match
+	Match -> Validation
+	Validation -> Snow
+	Validation -> Report
+	Report -> User
+	Dashboard -> User
+}
