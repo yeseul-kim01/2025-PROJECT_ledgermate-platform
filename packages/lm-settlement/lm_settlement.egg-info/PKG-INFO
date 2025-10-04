@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: lm-settlement
+Version: 0.1.0
+Summary: LedgerMate settlement pipeline (Rules + RAG + Solar LLM)
+Requires-Python: >=3.10
+Requires-Dist: openai==1.81.0
+Requires-Dist: lm-rag>=0.1.0
