@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: lm-ocr
+Version: 0.1.0
+Summary: LedgerMate - Receipt OCR (Upstage Document Digitization)
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: requests<3,>=2.31.0
+Requires-Dist: pydantic<3,>=2.7.0
+Requires-Dist: python-dateutil<3,>=2.8.2
+Requires-Dist: python-dotenv<2,>=1.0.0
+
+packages/
+└── lm-ocr/
+    ├── pyproject.toml
+    └── lm_ocr/
+        ├── __init__.py
+        ├── client.py        # Upstage API 호출 래퍼
+        ├── schema.py        # 결과 스키마 (pydantic)
+        ├── receipts.py      # OcrParser (파일→결과)
+        ├── io.py            # 저장/로딩 유틸
+        └── cli.py           # 콘솔 엔트리포인트 (lm-ocr)
+
+
+출력물은 기본적으로 out/receipts/ 아래에
+
+<basename>.ocr.json (정제 텍스트 + 메타)
+
+<basename>.raw.json (Upstage 원본 응답)

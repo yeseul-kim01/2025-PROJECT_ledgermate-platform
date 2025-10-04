@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+lm_ocr/__init__.py
+lm_ocr/cli.py
+lm_ocr/client.py
+lm_ocr/io.py
+lm_ocr/receipts.py
+lm_ocr/schema.py
+lm_ocr.egg-info/PKG-INFO
+lm_ocr.egg-info/SOURCES.txt
+lm_ocr.egg-info/dependency_links.txt
+lm_ocr.egg-info/entry_points.txt
+lm_ocr.egg-info/requires.txt
+lm_ocr.egg-info/top_level.txt

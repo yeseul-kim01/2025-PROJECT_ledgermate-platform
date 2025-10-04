@@ -1,0 +1,4 @@
+requests<3,>=2.31.0
+pydantic<3,>=2.7.0
+python-dateutil<3,>=2.8.2
+python-dotenv<2,>=1.0.0
