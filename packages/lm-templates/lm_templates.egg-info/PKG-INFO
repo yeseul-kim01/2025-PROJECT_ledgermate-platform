@@ -3,3 +3,4 @@ Name: lm-templates
 Version: 0.1.0
 Requires-Dist: beautifulsoup4
 Requires-Dist: requests
+Requires-Dist: openai==1.81.0

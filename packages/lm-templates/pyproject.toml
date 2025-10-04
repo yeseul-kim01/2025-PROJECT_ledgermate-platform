@@ -1,7 +1,7 @@
 [project]
 name = "lm-templates"
 version = "0.1.0"
-dependencies = ["beautifulsoup4", "requests"]
+dependencies = ["beautifulsoup4", "requests" , "openai==1.81.0"]
 
 [build-system]
 requires = ["setuptools", "wheel"]

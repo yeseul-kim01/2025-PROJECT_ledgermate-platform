@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: lm-reasoner
+Version: 0.1.0
+Requires-Python: >=3.11
+Requires-Dist: psycopg[binary]>=3.2

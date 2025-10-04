@@ -4,7 +4,9 @@ lm_templates/__init__.py
 lm_templates/apply_profile.py
 lm_templates/client_upstage.py
 lm_templates/detector.py
+lm_templates/llm_profile.py
 lm_templates/normalize.py
+lm_templates/ontology.py
 lm_templates/persist.py
 lm_templates/schema.py
 lm_templates.egg-info/PKG-INFO
