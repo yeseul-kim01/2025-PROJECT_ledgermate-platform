@@ -1,0 +1,2 @@
+[console_scripts]
+lm-ocr = lm_ocr.cli:main
