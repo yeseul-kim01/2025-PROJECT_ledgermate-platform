@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lm-settlement"
+version = "0.1.0"
+description = "LedgerMate settlement pipeline (Rules + RAG + Solar LLM)"
+requires-python = ">=3.10"
+dependencies = ["openai==1.81.0", "lm-rag>=0.1.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lm_settlement*"]

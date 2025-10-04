@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: lm-rag
+Version: 0.1.0
+Summary: LedgerMate RAG (Solar Embedding + pgvector)
+Requires-Python: >=3.10
+Requires-Dist: openai==1.81.0
+Requires-Dist: psycopg2-binary>=2.9
+Requires-Dist: numpy
