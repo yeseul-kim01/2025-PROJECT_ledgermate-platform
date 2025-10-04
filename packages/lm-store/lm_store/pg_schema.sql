@@ -117,3 +117,32 @@ CREATE TABLE IF NOT EXISTS settlement_template (
   created_at  TIMESTAMPTZ DEFAULT now(),
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
+
+
+-- psql -h $PG_HOST -U $PG_USER -d $PG_DB 로 접속 후 실행
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- 세칙(정책) 청크 저장소
+DROP TABLE IF EXISTS policy_chunks;
+CREATE TABLE policy_chunks (
+  id BIGSERIAL PRIMARY KEY,
+  doc_title TEXT,
+  version TEXT,
+  section TEXT,
+  page INT,
+  snippet TEXT,
+  embedding vector(1536)  -- EMBED_DIM과 동일해야 함
+);
+CREATE INDEX IF NOT EXISTS idx_policy_chunks_vec ON policy_chunks USING hnsw (embedding vector_cosine_ops);
+
+-- 예산 라인 저장소
+DROP TABLE IF EXISTS budget_lines;
+CREATE TABLE budget_lines (
+  id BIGSERIAL PRIMARY KEY,
+  line_title TEXT,
+  line_code TEXT,
+  category_path TEXT,
+  remaining_amount NUMERIC,
+  embedding vector(1536)  -- EMBED_DIM과 동일해야 함
+);
+CREATE INDEX IF NOT EXISTS idx_budget_lines_vec ON budget_lines USING hnsw (embedding vector_cosine_ops);

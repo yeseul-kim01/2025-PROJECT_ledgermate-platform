@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lm-rag"                 # 배포명(하이픈)
+version = "0.1.0"
+description = "LedgerMate RAG (Solar Embedding + pgvector)"
+requires-python = ">=3.10"
+dependencies = ["openai==1.81.0", "psycopg2-binary>=2.9"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lm_rag*"]           # 임포트 패키지(언더스코어)
