@@ -7,6 +7,7 @@ from psycopg.rows import dict_row
 import json
 from typing import Iterable, Mapping, Optional
 from dotenv import load_dotenv
+from lm_store.pg import get_pg_conn
 
 load_dotenv()
 
@@ -192,3 +193,15 @@ def insert_budget_chunks(
         )
     conn.commit()
     return len(rows)
+
+def save_template_to_db(schema, pdf_path):
+    conn = get_pg_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO settlement_template (template_id, file_path, schema_json)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (template_id) DO UPDATE SET schema_json = EXCLUDED.schema_json
+    """, (file_id_of(pdf_path), pdf_path, json.dumps(schema, ensure_ascii=False)))
+    conn.commit()
+    cur.close()
+    conn.close()

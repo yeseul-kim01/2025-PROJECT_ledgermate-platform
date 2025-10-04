@@ -42,6 +42,50 @@
 import json, hashlib, sys, os
 from lm_docparse.pdfParser import call_document_parse
 from lm_templates.detector import detect_template_from_html
+import psycopg2  # ← DB 직접 연결용 (pip install psycopg2-binary)
+
+# --- DB 저장 함수 추가 ---
+def save_template_to_db(schema_obj, pdf_path: str):
+    """
+    settlement_template 테이블에 upsert.
+    - 연결정보: 환경변수 PG_DSN (예: postgresql://user:pass@localhost:5432/ledgermate)
+    - 테이블이 없으면 아래 DDL 참고.
+    """
+    dsn = os.environ.get("POSTGRES_DSN")
+    if not dsn:
+        print("[WARN] PG_DSN 미설정 → DB 저장 생략")
+        return
+
+    # dataclass 포함 객체를 안전하게 직렬화
+    payload = json.dumps(schema_obj, default=lambda o: o.__dict__, ensure_ascii=False)
+
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = True
+    cur = conn.cursor()
+    # template_id는 파일 '내용' 해시(아래 file_id_of와 동일 로직)로 쓰는 게 안전
+    template_id = file_id_of(pdf_path)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS settlement_template (
+      template_id TEXT PRIMARY KEY,
+      file_path   TEXT NOT NULL,
+      schema_json JSONB NOT NULL,
+      created_at  TIMESTAMPTZ DEFAULT now(),
+      updated_at  TIMESTAMPTZ DEFAULT now()
+    );
+    """)
+    cur.execute("""
+    INSERT INTO settlement_template (template_id, file_path, schema_json)
+    VALUES (%s, %s, %s::jsonb)
+    ON CONFLICT (template_id) DO UPDATE
+      SET file_path=EXCLUDED.file_path,
+          schema_json=EXCLUDED.schema_json,
+          updated_at=now()
+    """, (template_id, pdf_path, payload))
+
+    cur.close()
+    conn.close()
+    print(f"✓ DB saved: settlement_template.template_id={template_id}")
 
 def file_id_of(path: str) -> str:
     """파일 '내용'으로 SHA1 해시 → 파일 식별자(경로 해시보다 안전)"""
@@ -52,89 +96,80 @@ def file_id_of(path: str) -> str:
     return h.hexdigest()
 
 def _find_first_html(obj):
-    """dict/list/str 전체를 재귀적으로 훑어 최초의 HTML 문자열을 반환"""
+    # ... (네가 가진 함수 그대로)
     if isinstance(obj, str):
         s = obj.strip()
         if "<html" in s.lower() and "</html>" in s.lower():
             return s
         return None
     if isinstance(obj, dict):
-        # 흔한 키 우선 시도
         for k in ("html", "content", "data"):
             if k in obj:
-                v = _find_first_html(obj[k])
+                v = _find_first_html(obj[k]);  
                 if v: return v
-        # 그 외 키도 전부 탐색
         for v in obj.values():
-            r = _find_first_html(v)
+            r = _find_first_html(v);  
             if r: return r
     if isinstance(obj, list):
         for v in obj:
-            r = _find_first_html(v)
+            r = _find_first_html(v);  
             if r: return r
     return None
 
 def extract_html(resp: dict) -> str:
-    """응답에서 HTML을 우선 추출, 없으면 길이 있는 Markdown도 대체 허용"""
-    # 1) 재귀로 html 찾기
+    # ... (네가 가진 함수 그대로)
     html = _find_first_html(resp)
-    if html:
-        return html
-
-    # 2) html 없으면 markdown/text 추정
+    if html: return html
     def _find_markdown(obj):
         if isinstance(obj, str) and len(obj) > 200 and ("|" in obj or "##" in obj or "**" in obj):
             return obj
         if isinstance(obj, dict):
             for k in ("markdown", "md", "text"):
                 if k in obj:
-                    v = _find_markdown(obj[k])
+                    v = _find_markdown(obj[k]);  
                     if v: return v
             for v in obj.values():
-                r = _find_markdown(v)
+                r = _find_markdown(v);  
                 if r: return r
         if isinstance(obj, list):
             for v in obj:
-                r = _find_markdown(v)
+                r = _find_markdown(v);  
                 if r: return r
         return None
-
     md = _find_markdown(resp)
     return md or ""
 
 def main(pdf_path: str, out_path: str = "out/templates/template.json"):
     raw_out = out_path.replace(".json", ".raw.json")
 
-    # Upstage Document Parsing 호출 (원 응답은 raw_out에 저장됨)
     resp = call_document_parse(
         input_file=pdf_path,
         output_file=raw_out,
-        ocr="auto",                   # 디지털이면 패스, 스캔이면 OCR
-        coordinates=True,             # 좌표 보존(후속 기능 대비)
-        chart_recognition=False,      # 차트 인식 불필요
-        output_formats=["html", "markdown", "text"],  # html 우선, 대체로 md/text
-        base64_encoding=[],           # 테이블 b64 불필요
+        ocr="auto",
+        coordinates=True,
+        chart_recognition=False,
+        output_formats=["html", "markdown", "text"],
+        base64_encoding=[],
         model="document-parse",
         timeout=120,
         verbose=True,
     )
 
-    # 응답에서 HTML/Markdown 추출
     html = extract_html(resp)
     if not html:
         print("[ERROR] Upstage 응답에서 HTML/Markdown을 찾지 못했습니다. 원 응답 파일을 확인하세요:", raw_out)
         sys.exit(1)
 
-    # HTML → 템플릿 스키마 감지(헤더, 테이블, 컬럼 표준화 매핑 후보)
     schema = detect_template_from_html(file_id_of(pdf_path), html)
 
-    # 파일 저장
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, default=lambda o: o.__dict__, ensure_ascii=False, indent=2)
 
-    # 콘솔 출력
     print(json.dumps(schema, default=lambda o: o.__dict__, ensure_ascii=False, indent=2))
+
+    # 여기서 DB 저장 호출 (스코프 OK)
+    save_template_to_db(schema, pdf_path)
 
 if __name__ == "__main__":
     pdf = sys.argv[1] if len(sys.argv) > 1 else "data/templates-sample/결산안예시.pdf"

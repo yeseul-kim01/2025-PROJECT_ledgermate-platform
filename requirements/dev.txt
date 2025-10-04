@@ -7,4 +7,4 @@ pytest>=8,<9
 mypy>=1.8,<2
 beautifulsoup4>=4.12 #표!
 python-dotenv>=1.0 #환경변수
-
+psycopg2-binary
