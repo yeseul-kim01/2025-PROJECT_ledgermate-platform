@@ -105,3 +105,15 @@ CREATE TABLE IF NOT EXISTS form_template (
   UNIQUE (org_id, kind, name, version)
 );
 CREATE INDEX IF NOT EXISTS idx_form_tpl_org ON form_template(org_id);
+
+
+
+
+-- settlement_template 테이블(최소 필드)
+CREATE TABLE IF NOT EXISTS settlement_template (
+  template_id TEXT PRIMARY KEY,          -- file_id_of(pdf_path)
+  file_path   TEXT NOT NULL,
+  schema_json JSONB NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  updated_at  TIMESTAMPTZ DEFAULT now()
+);
