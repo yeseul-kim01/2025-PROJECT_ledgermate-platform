@@ -1,7 +1,6 @@
 pyproject.toml
 lm_rag/__init__.py
 lm_rag/embeddings_upstage.py
-lm_rag/pg_store.py
 lm_rag/retriever.py
 lm_rag.egg-info/PKG-INFO
 lm_rag.egg-info/SOURCES.txt
