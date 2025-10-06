@@ -30,15 +30,17 @@ SYSTEM = """너는 회계 정산 어시스턴트다. 오직 JSON 객체 하나�
 }
 
 결정 규칙:
-1) account_name: rule_topn이 비어있지 않으면 최고 점수 category_path,비어있거나 신뢰도가 낮으면 영수증 텍스트와 규정(제16조 비목 정의 등)을 근거로 직접 추론.
+1) account_name: 영수증 텍스트·규정 스니펫·예산 라인만을 근거로 스스로 결정한다.
+   - 관람권/티켓/상품권/경품/기념품 등 회원에게 제공되는 물품·현금은 세칙 제16조 ④-4에 따라 '상품비'.
+   - 다과/음료 등 간담·행사 성격이면 해당 비목(예: 간식/간담회비), 사무용 소모품은 '소모품비'.
+   - 근거가 불충분하면 임의로 '운영비>기타'로 폴백하지 말고 null 허용.
 2) account_code 우선순위
    (a) budget_refs[0].line_code가 회계 코드 패턴(### 또는 ###-###(-###))이면 사용,
-   (b) 아니면 rule_topn[0].code_hint 사용,
-   (c) 둘 다 없거나 비정상이면 null.
-3) detail: 상호/핵심 품목/합계를 짧게. 예) "버거킹, 와퍼 세트 10개, 105,000원".
+   (b) 아니면 추론 불가 → null.
+3) detail: 가능하면 상호명을 앞에 붙여 핵심 품목/합계를 짧게. 예) "쿠프마케팅, 1인 관람권, 13,000원".
 4) policy_refs.doc에 확장자(.chunks/.json 등)가 있으면 제거.
-5) warnings에는 데이터 누락·기간 불일치·예산 잔액 미확인 등만 간결히 적는다.
-6) 입력 배열이 비어 있으면 해당 필드는 null로 두고 warnings로 알린다.
+5) policy_refs/budget_refs는 점수 상위 1~3개만 포함.
+6) warnings에는 데이터 누락·기간 불일치·예산 잔액 미확인 등만 간결히 적는다.
 """
 
 USER_TMPL = """
@@ -51,9 +53,6 @@ USER_TMPL = """
 # 입력 영수증
 {receipt}
 
-# 규칙 후보(있을 수도, 없을 수도 있음)
-{rule_topn}
-
 # 규정 스니펫 후보
 {policies}
 
@@ -63,6 +62,9 @@ USER_TMPL = """
 # 프로파일 매핑
 {profile_mapping}
 
+# 예산 코드 아웃라인(정규 코드표; 반드시 이 목록 안에서만 선택)
+{budget_outline_text}
+
 # 지시
 위 정보를 바탕으로 settlement_row / evidence / warnings를 포함한 JSON을 산출하세요.
 
@@ -70,4 +72,7 @@ USER_TMPL = """
 - 위 SYSTEM의 스키마와 규칙을 엄격히 따르고, JSON 객체만 출력한다(추가 텍스트 금지).
 - 값이 없으면 null. 임의 기본치 만들지 말 것.
 - policy_refs/budget_refs는 점수 상위 1~3개만 포함.
+- account_name 및 account_code는 반드시 '예산 코드 아웃라인'에 존재하는 경로/코드 중에서 고른다.
+- 만약 가장 적합한 경로가 아웃라인에 보이지만 code를 확정하기 어렵다면 account_name만 채우고 account_code는 null을 유지한다.
+
 """

@@ -122,13 +122,26 @@ class RAG:
                 else:
                     raise RuntimeError("budget_line has no embedding/embedding_i2000 column")
 
+            # 선택 컬럼들
             code_col     = _pick_col(bl_cols, "code")
             category_col = _pick_col(bl_cols, "category")
             subcat_col   = _pick_col(bl_cols, "subcat")
             item_col     = _pick_col(bl_cols, "item")
+            title_col    = _pick_col(bl_cols, "title", "line_title", "name")  # ← 추가
             amount_col   = _pick_col(bl_cols, "amount")
 
-            code_sel     = (code_col or "NULL::text") + " AS line_code"
+            # 코드 유효성 (DB code가 3자리/3-3/3-3-3면 사용)
+            valid_pat = r"^[0-9]{3}(?:-[0-9]{3}(?:-[0-9]{3})?)?$"
+            code_valid = f"CASE WHEN {code_col} ~ '{valid_pat}' THEN {code_col} ELSE NULL END" if code_col else "NULL::text"
+
+            # 코드 텍스트 추출: item/category/subcat/title에서 3자리(또는 3-3(-3))을 찾음
+            blob_parts = [c for c in (item_col, category_col, subcat_col, title_col) if c]
+            blob = " || ' ' || ".join(blob_parts) if blob_parts else "''"
+            code_from_text = f"(regexp_match({blob}, '(\\d{{3}}(?:-\\d{{3}}(?:-\\d{{3}})?)?)'))[1]"
+
+            # 최종 code 선택
+            code_sel = f"COALESCE({code_valid}, {code_from_text}, NULL::text) AS line_code"
+
             if category_col and subcat_col:
                 category_sel = f"({category_col} || '>' || {subcat_col}) AS category_path"
             elif category_col:
