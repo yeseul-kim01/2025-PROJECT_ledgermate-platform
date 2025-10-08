@@ -48,8 +48,9 @@ def main():
     ap.add_argument("--in", dest="in_path", required=True, help="out/policies/...chunks.json")
     ap.add_argument("--api-key", default=None)
     ap.add_argument("--base-url", default=None)
+    ap.add_argument("--policy-id",default=None)
     args = ap.parse_args()
-
+    policy_id = args.policy_id
     chunks = load_policy_chunks(Path(args.in_path))
 
     # 파일 단위 식별자 (원본 파일명/sha)
@@ -73,8 +74,6 @@ def main():
     embs_i2000 = reduce_embeddings(embs_4096, dim_out=2000, assume_dim_in=dim_in)
 
     with _pg() as conn:
-        policy_id = upsert_policy(conn, ORG_ID, source_name, version, file_sha)
-
         sql = """
         INSERT INTO rule_chunk
           (policy_id, org_id, ord, code, title, path, text, context_text, tables_json, embedding, embedding_i2000)
