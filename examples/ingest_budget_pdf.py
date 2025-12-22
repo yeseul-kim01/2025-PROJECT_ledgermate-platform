@@ -201,15 +201,15 @@ def main():
                 with chunks_json_path.open("w", encoding="utf-8") as f:  # [NEW]
                     json.dump(chunks, f, ensure_ascii=False, indent=2)
                 print(f"🧩 chunks saved: {chunks_json_path} (count={len(chunks)})")  # [NEW]
-
-                count = insert_budget_chunks(
-                    conn,
-                    budget_doc_id=bid,
-                    org_id=args.org_id,
-                    policy_id=args.policy_id,
-                    chunks=chunks
-                )
-                print(f"🎉 chunks inserted to DB: {count}")
+# 
+                # count = insert_budget_chunks(
+                #     conn,
+                #     budget_doc_id=bid,
+                #     org_id=args.org_id,
+                #     policy_id=args.policy_id,
+                #     chunks=chunks
+                # )
+                # print(f"🎉 chunks inserted to DB: {count}")
 
 if __name__ == "__main__":
     main()

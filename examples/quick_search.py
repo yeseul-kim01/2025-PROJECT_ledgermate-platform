@@ -12,7 +12,7 @@ from lm_rag.embeddings_upstage import embed_texts, reduce_embeddings
 load_dotenv()
 
 QUERY = sys.argv[1] if len(sys.argv) > 1 else "간담회 다과비 처리 기준"
-TOPK = int(os.getenv("TOPK", 10))
+TOPK = int(os.getenv("TOPK", 20))
 
 # ORG
 ORG_ID = os.getenv("LM_ORG_ID", "demo.univ")
@@ -52,15 +52,18 @@ def main():
             # 정책/청크에만 RLS 켜진 상태면 다른 테이블에서는 없어도 OK
             pass
 
-        # 3) 검색 (rule_chunk)
+        # examples/quick_search.py (수정본 핵심 부분만)
+
         sql = """
         WITH q AS (SELECT %s::vector(2000) AS v)
         SELECT
-          id,
-          ord,
-          title,
-          LEFT(text, 160) AS preview,
-          (embedding_i2000 <=> (SELECT v FROM q)) AS dist
+        id,
+        ord,
+        title,
+        path,
+        LEFT(text, 160) AS preview,
+        tables_json,
+        (embedding_i2000 <=> (SELECT v FROM q)) AS dist
         FROM rule_chunk
         WHERE org_id = %s
         ORDER BY embedding_i2000 <=> (SELECT v FROM q)
@@ -70,18 +73,19 @@ def main():
         cur.execute(sql, (q2000_str, ORG_ID, TOPK))
         rows = cur.fetchall()
 
-    # 4) 출력
-    # rows: [(id, ord, title, preview, dist), ...]
-    out = [
-        {
-            "id": r[0],
-            "ord": r[1],
-            "title": r[2],
-            "preview": r[3],
-            "distance": float(r[4]),
-        }
-        for r in rows
-    ]
+        out = [
+            {
+                "id": r[0],
+                "ord": r[1],
+                "title": r[2],
+                "path": r[3],
+                "preview": r[4],        # LEFT(text, 160)
+                "tables": r[5],         # tables_json (없으면 None)
+                "distance": float(r[6]) # dist
+            }
+            for r in rows
+        ]
+
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 
