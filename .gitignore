@@ -10,3 +10,10 @@ tmp/
 *.cache
 .env
 storage/*
+
+#mac
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.DS_Store
